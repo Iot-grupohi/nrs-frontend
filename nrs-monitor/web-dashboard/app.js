@@ -1692,8 +1692,20 @@ function carregarLojasDoFirebase(atualizacaoEmSegundoPlano = false) {
                 // Verificação básica se é uma loja válida
                 const loja = lojas[codigo];
                 if (typeof loja === 'object') {
+                    // Verificar se o status é INDEFINIDO e remover do Firebase
+                    const statusInfo = determinarStatus(loja);
+                    if (statusInfo.status === "Indefinido") {
+                        // Remove a loja do Firebase
+                        database.ref('/' + codigo).remove()
+                            .then(() => {
+                                console.log(`Loja ${codigo} removida do Firebase por estar INDEFINIDA.`);
+                            })
+                            .catch((error) => {
+                                console.error(`Erro ao remover loja ${codigo}:`, error);
+                            });
+                        continue; // Não adiciona à lista de processadas
+                    }
                     encontrouLojas = true;
-                    
                     // Armazenar a loja para processamento
                     lojasProcessadas.push({
                         codigo: codigo,
