@@ -778,17 +778,9 @@ function filtrarLojas() {
                 return passaFiltroTexto && passaFiltroRegiao && passaFiltroEstado && passaFiltroStatus;
             });
             
-            // Limitar o número de resultados para não sobrecarregar o navegador
-            const resultadosMaximos = 100;
-            const resultadosLimitados = lojasFiltradas.length > resultadosMaximos;
-            
-            if (resultadosLimitados) {
-                lojasFiltradas = lojasFiltradas.slice(0, resultadosMaximos);
-            }
-            
             // Atualizar contador de lojas com verificação de nulo
             if (storeCountElement) {
-                storeCountElement.textContent = `${lojasFiltradas.length} lojas encontradas${resultadosLimitados ? ' (mostrando primeiras 100)' : ''}`;
+                storeCountElement.textContent = `${lojasFiltradas.length} lojas encontradas`;
             }
             
             // Se já existe uma instância do DataTable, destrua-a
@@ -1651,7 +1643,7 @@ function carregarLojas() {
 // Função para carregar lojas do Firebase
 function carregarLojasDoFirebase(atualizacaoEmSegundoPlano = false) {
     // Limitar a quantidade de dados obtidos com shallow e evitar recargas desnecessárias
-    database.ref('/').limitToFirst(100).once('value', snapshot => {
+    database.ref('/').once('value', snapshot => {
         // Remove o elemento de loading se não estiver em segundo plano
         if (loadingRow && !atualizacaoEmSegundoPlano) {
             loadingRow.remove();

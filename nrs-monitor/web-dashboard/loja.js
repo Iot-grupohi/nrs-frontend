@@ -1151,22 +1151,28 @@ function criarCardDosadora(id, dados) {
     const btnAcionar = card.querySelector('.btn-acionar');
         if (btnAcionar && bombaSelect) {
     btnAcionar.addEventListener('click', () => {
-        const bomba = parseInt(bombaSelect.value);
-                
-                // Desabilita o botão enquanto processa
-                btnAcionar.disabled = true;
-                btnAcionar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Acionando...';
-                
-                // Atualiza o status para 'processando'
-                const statusRef = database.ref(`/${lojaId}/status/dosadoras/${id}`);
-                statusRef.set('processando');
+        // Garantir que não há reatribuição e que o valor é numérico
+        let bomba = Number(bombaSelect.value);
+        console.log(`Valor enviado para o Firebase:`, bomba, typeof bomba);
         
+        // Desabilita o botão enquanto processa
+        btnAcionar.disabled = true;
+        btnAcionar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Acionando...';
+        
+        // Atualiza o status para 'processando'
+        const statusRef = database.ref(`/${lojaId}/status/dosadoras/${id}`);
+        statusRef.set('processando');
+
         // Atualiza no Firebase
         const dosadoraRef = database.ref(`/${lojaId}/dosadora_01/${id}`);
-        dosadoraRef.update({
-            bomba: bomba
-        }).then(() => {
-                    console.log(`Comando para acionar bomba ${bomba} enviado para dosadora ${id}`);
+        dosadoraRef.child('bomba').set(bomba)
+        .then(() => {
+            // Ler o valor salvo diretamente do Firebase para checar tipo
+            dosadoraRef.child('bomba').once('value', snap => {
+                const val = snap.val();
+                console.log('Valor lido do Firebase após set:', val, typeof val);
+            });
+            console.log(`Comando para acionar bomba ${bomba} enviado para dosadora ${id}`);
                     
                     // Configura um listener para monitorar quando a bomba retornar para 0
                     // Este listener verifica quando o ESP completou a operação
@@ -1262,21 +1268,21 @@ function criarCardDosadora(id, dados) {
                     // Usar os valores que já temos, com prioridade para tempo_atual_X, depois ajuste_tempo_X
                     if (tempoSabao) {
                         // Usar valores reais da máquina se disponíveis, ou valores configurados
-                        tempoSabao.value = dados.tempo_atual_sabao !== undefined ? 
+                        tempoSabao.value = Number(dados.tempo_atual_sabao !== undefined ? 
                                           dados.tempo_atual_sabao : 
-                                          (dados.ajuste_tempo_sabao !== undefined ? dados.ajuste_tempo_sabao : 0);
+                                          (dados.ajuste_tempo_sabao !== undefined ? dados.ajuste_tempo_sabao : 0));
                     }
                     
                     if (tempoFloral) {
-                        tempoFloral.value = dados.tempo_atual_floral !== undefined ? 
+                        tempoFloral.value = Number(dados.tempo_atual_floral !== undefined ? 
                                            dados.tempo_atual_floral : 
-                                           (dados.ajuste_tempo_floral !== undefined ? dados.ajuste_tempo_floral : 0);
+                                           (dados.ajuste_tempo_floral !== undefined ? dados.ajuste_tempo_floral : 0));
                     }
                     
                     if (tempoSport) {
-                        tempoSport.value = dados.tempo_atual_sport !== undefined ? 
+                        tempoSport.value = Number(dados.tempo_atual_sport !== undefined ? 
                                           dados.tempo_atual_sport : 
-                                          (dados.ajuste_tempo_sport !== undefined ? dados.ajuste_tempo_sport : 0);
+                                          (dados.ajuste_tempo_sport !== undefined ? dados.ajuste_tempo_sport : 0));
                     }
             
             // Exibe o modal
@@ -1300,27 +1306,15 @@ function criarCardDosadora(id, dados) {
                 if (tempoFloralElement) tempoFloralElement.textContent = "Consultando...";
                 if (tempoSportElement) tempoSportElement.textContent = "Consultando...";
                 
-                // Atualiza no Firebase para solicitar consulta
+                // Enviar apenas consulta_tempo: true
                 const dosadoraRef = database.ref(`/${lojaId}/dosadora_01/${id}`);
-                
-                // Primeiro, resetar os tempos atuais para garantir que não mostre valores antigos
-                dosadoraRef.update({
-                    tempo_atual_sabao: "0",
-                    tempo_atual_floral: "0",
-                    tempo_atual_sport: "0",
-                    consulta_tempo: false
-                }).then(() => {
-                    // Depois de resetar, solicita a consulta
-                    return dosadoraRef.update({
-                    consulta_tempo: true
-                    });
-                }).then(() => {
+                dosadoraRef.child('consulta_tempo').set(true)
+                .then(() => {
                     console.log(`Solicitação de consulta de tempos enviada para dosadora ${id}`);
-                    
                     // Atualiza o status para 'processando'
                     const statusRef = database.ref(`/${lojaId}/status/dosadoras/${id}`);
                     statusRef.set('processando');
-                    
+
                     // Criar um listener temporário para aguardar a resposta
                     const timeoutPromise = new Promise((resolve, reject) => {
                         setTimeout(() => reject(new Error('Timeout')), 30000); // 30 segundos de timeout
@@ -1329,11 +1323,8 @@ function criarCardDosadora(id, dados) {
                     const consultaPromise = new Promise((resolve) => {
                         const temposListener = dosadoraRef.on('value', (snapshot) => {
                             const dados = snapshot.val() || {};
-                            // Verifica se todos os tempos foram atualizados e consulta_tempo voltou para false
-                            if (dados.consulta_tempo === false &&
-                                dados.tempo_atual_sabao !== undefined &&
-                                dados.tempo_atual_floral !== undefined &&
-                                dados.tempo_atual_sport !== undefined) {
+                            // Verifica se consulta_tempo voltou para false
+                            if (dados.consulta_tempo === false) {
                                 dosadoraRef.off('value', temposListener);
                                 resolve(dados);
                             }
@@ -2111,42 +2102,38 @@ if (btnReset3) {
 }
 
 // Configuração do botão de salvar tempos
-document.getElementById('btn-salvar-tempos').addEventListener('click', function() {
+document.getElementById('btn-salvar-tempos').addEventListener('click', async function() {
     if (!currentDosadoraId) return;
     
-    const tempoSabao = parseInt(document.getElementById('tempo-sabao').value) || 0;
-    const tempoFloral = parseInt(document.getElementById('tempo-floral').value) || 0;
-    const tempoSport = parseInt(document.getElementById('tempo-sport').value) || 0;
+    const tempoSabao = Number(document.getElementById('tempo-sabao').value) || 0;
+    const tempoFloral = Number(document.getElementById('tempo-floral').value) || 0;
+    const tempoSport = Number(document.getElementById('tempo-sport').value) || 0;
     
-    // Atualiza no Firebase
+    // Atualiza no Firebase individualmente
     const dosadoraRef = database.ref(`/${lojaId}/dosadora_01/${currentDosadoraId}`);
-    dosadoraRef.update({
-        ajuste_tempo_sabao: tempoSabao,
-        ajuste_tempo_floral: tempoFloral,
-        ajuste_tempo_sport: tempoSport,
-        consulta_tempo: true
-    }).then(() => {
+    try {
+        await dosadoraRef.child('ajuste_tempo_sabao').set(tempoSabao);
+        await dosadoraRef.child('ajuste_tempo_floral').set(tempoFloral);
+        await dosadoraRef.child('ajuste_tempo_sport').set(tempoSport);
+        await dosadoraRef.child('consulta_tempo').set(true);
         // Atualiza o status para 'processando'
         const statusRef = database.ref(`/${lojaId}/status/dosadoras/${currentDosadoraId}`);
         statusRef.set('processando');
-        
         // Atualiza imediatamente os valores no card (já que sabemos os valores)
         const cardDosadora = document.querySelector(`.card-dosadora-${currentDosadoraId}`);
         if (cardDosadora) {
             const tempoSabaoElement = cardDosadora.querySelector('.tempo-sabao');
             const tempoFloralElement = cardDosadora.querySelector('.tempo-floral');
             const tempoSportElement = cardDosadora.querySelector('.tempo-sport');
-            
             if (tempoSabaoElement) tempoSabaoElement.textContent = tempoSabao;
             if (tempoFloralElement) tempoFloralElement.textContent = tempoFloral;
             if (tempoSportElement) tempoSportElement.textContent = tempoSport;
         }
-        
         showAlert(`Tempos configurados com sucesso para a dosadora ${currentDosadoraId}`, 'Sucesso', 'success', true);
         configModal.hide();
-    }).catch(error => {
+    } catch (error) {
         showAlert(`Erro ao configurar tempos: ${error.message}`, 'Erro', 'error');
-    });
+    }
 });
 
 // Elementos de status_machine
@@ -2436,6 +2423,11 @@ function configurarListenersStatus() {
 function atualizarStatusMachine(tipo, id, status) {
     console.log(`Atualizando status: ${tipo} ${id} -> ${status}`);
     
+    if (!statusHistoryRef) {
+        console.error('statusHistoryRef não inicializado');
+        inicializarReferenciasFirebase();
+    }
+    
     // Encontrar a máquina nos dados
     const machineIndex = machinesStatusData.findIndex(m => 
         m.tipo === tipo && m.id === id
@@ -2464,13 +2456,18 @@ function atualizarStatusMachine(tipo, id, status) {
                 machinesStatusData[machineIndex].historico = [];
             }
             
-            machinesStatusData[machineIndex].historico.unshift({
+            const historyEntry = {
                 timestamp: Date.now(),
+                tipo: tipo,
+                id: id,
                 status: status,
                 evento: `Alteração de status: ${currentStatus} → ${status}`
-            });
+            };
             
-            // Limitar histórico a 10 entradas
+            // Adicionar ao histórico local
+            machinesStatusData[machineIndex].historico.unshift(historyEntry);
+            
+            // Limitar histórico local a 10 entradas
             if (machinesStatusData[machineIndex].historico.length > 10) {
                 machinesStatusData[machineIndex].historico = 
                     machinesStatusData[machineIndex].historico.slice(0, 10);
@@ -2480,32 +2477,25 @@ function atualizarStatusMachine(tipo, id, status) {
             machinesStatusData[machineIndex].status = status;
             machinesStatusData[machineIndex].lastUpdate = Date.now();
             
-            // Criar objeto de histórico com o evento de alteração
-            const historyEntry = {
-                timestamp: Date.now(),
-                tipo: tipo,
-                id: id,
-                status: status,
-                evento: `Alteração de status: ${currentStatus} → ${status}`
-            };
-            
-            // Atualizar histórico global para a tabela de histórico
-            statusHistory.unshift(historyEntry);
-            
-            // Limitar histórico global a 50 entradas
-            if (statusHistory.length > 50) {
-                statusHistory = statusHistory.slice(0, 50);
+            // Atualizar histórico global
+            if (statusHistory) {
+                statusHistory.unshift(historyEntry);
+                // Limitar histórico global a 50 entradas
+                if (statusHistory.length > 50) {
+                    statusHistory = statusHistory.slice(0, 50);
+                }
             }
             
             // Salvar a entrada de histórico no Firebase
-            const newHistoryRef = statusHistoryRef.push();
-            newHistoryRef.set(historyEntry)
-                .then(() => {
-                    console.log("Histórico de status salvo no banco de dados");
-                })
-                .catch(error => {
-                    console.error("Erro ao salvar histórico de status:", error);
-                });
+            if (statusHistoryRef) {
+                statusHistoryRef.push(historyEntry)
+                    .then(() => {
+                        console.log("Histórico de status salvo no banco de dados");
+                    })
+                    .catch(error => {
+                        console.error("Erro ao salvar histórico de status:", error);
+                    });
+            }
             
             // Renderizar o histórico
             renderizarHistoricoStatus();
@@ -3397,6 +3387,8 @@ let statusHistoryRef;
 
 // Função para inicializar as referências do Firebase
 function inicializarReferenciasFirebase() {
+    database = firebase.database();
+    lojaId = obterLojaId(); // Certifique-se de que esta função existe
     statusHistoryRef = database.ref(`/${lojaId}/status_history`);
 }
 
@@ -3437,30 +3429,45 @@ function carregarHistoricoStatus() {
 
 // Modificar a função que carrega os dados iniciais
 document.addEventListener('DOMContentLoaded', function() {
-    // Obter o ID da loja da URL
-    const urlParams = new URLSearchParams(window.location.search);
-    lojaId = urlParams.get('id');
-    
-    if (!lojaId) {
-        console.error('ID da loja não encontrado na URL');
-        return;
-    }
-    
     // Inicializar referências do Firebase
     inicializarReferenciasFirebase();
     
-    // Carregar dados da loja
-    carregarDadosLoja();
+    // Carregar dados iniciais
+    carregarStatusMachines();
+    carregarHistoricoStatus();
     
-    // Carregar CEP
-    if (typeof exibirCEPLoja === 'function') {
-        console.log('Carregando CEP para loja:', lojaId);
-        exibirCEPLoja(lojaId, '#loja-cep');
-    } else {
-        console.error('Função exibirCEPLoja não disponível');
+    // Configurar listeners de status
+    configurarListenersStatus();
+});
+
+// ... existing code ...
+
+// Função para obter o ID da loja da URL
+function obterLojaId() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+    
+    if (!id) {
+        console.error('ID da loja não encontrado na URL');
+        return null;
     }
     
-    // ... resto do código existente ...
+    return id;
+}
+
+// --- Fix modal position and visibility on page load ---
+document.addEventListener('DOMContentLoaded', function() {
+    var configModal = document.getElementById('configModal');
+    if (configModal) {
+        // Move o modal para o final do body
+        document.body.appendChild(configModal);
+        // Remove a classe fade para evitar problemas de transição
+        configModal.classList.remove('fade');
+        // Garante que o modal está visível quando chamado
+        configModal.style.display = '';
+        configModal.style.opacity = '';
+        configModal.style.zIndex = '';
+    }
 });
 
 
