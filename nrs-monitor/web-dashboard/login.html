@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Dashboard de Lojas</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary-color: #64748b;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+            --border-radius: 12px;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Elementos decorativos de fundo */
+        body::before,
+        body::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            z-index: -1;
+        }
+        
+        body::before {
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, rgba(37, 99, 235, 0) 70%);
+            top: -100px;
+            left: -100px;
+        }
+        
+        body::after {
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, rgba(37, 99, 235, 0) 70%);
+            bottom: -100px;
+            right: -100px;
+        }
+        
+        .login-container {
+            max-width: 480px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            padding: 10px;
+            height: 100%;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .brand-container {
+            text-align: center;
+            margin-bottom: 1rem;
+            animation: fadeInDown 0.6s ease-out;
+            flex-shrink: 0;
+        }
+        
+        .brand-logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border-radius: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+            box-shadow: var(--shadow-lg);
+            transition: transform 0.3s ease;
+        }
+        
+        .brand-logo:hover {
+            transform: translateY(-3px) scale(1.02);
+        }
+        
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+        
+        .brand-description {
+            color: #94a3b8;
+            margin-top: 0.25rem;
+            font-size: 0.85rem;
+        }
+        
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            background-color: white;
+            animation: fadeInUp 0.6s ease-out;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            max-height: calc(100vh - 160px);
+        }
+        
+        .card-header {
+            background-color: transparent;
+            border-bottom: none;
+            padding: 1.25rem 1.25rem 0.25rem;
+            flex-shrink: 0;
+        }
+        
+        .card-body {
+            padding: 1.25rem;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            flex: 1;
+        }
+        
+        .card-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .card-body::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 3px;
+        }
+        
+        .card-body::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+        
+        .nav-tabs {
+            border: none;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+            flex-wrap: nowrap;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            font-weight: 600;
+            color: #94a3b8;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            position: relative;
+            white-space: nowrap;
+        }
+        
+        .nav-tabs .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+            border-radius: 3px;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: var(--primary-color);
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            background: transparent;
+        }
+        
+        .nav-tabs .nav-link.active::after {
+            width: 80%;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            border: 2px solid #e2e8f0;
+            border-radius: var(--border-radius);
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            background-color: #f8fafc;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
+            background-color: white;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 0.75rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,255,255,0));
+            transition: all 0.5s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        .forgot-password {
+            font-size: 0.8rem;
+            color: #64748b;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin-top: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .forgot-password:hover {
+            color: var(--primary-color);
+            transform: translateX(3px);
+        }
+        
+        .alert {
+            border-radius: var(--border-radius);
+            font-size: 0.85rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .alert-danger {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+        
+        .footer-text {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-align: center;
+            margin-top: 0.75rem;
+            margin-bottom: 0;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+        
+        /* Animações */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Media Queries para melhor responsividade */
+        @media (max-width: 576px) {
+            .login-container {
+                padding: 10px;
+            }
+            
+            .brand-logo {
+                width: 50px;
+                height: 50px;
+                font-size: 1.25rem;
+            }
+            
+            .brand-name {
+                font-size: 1.25rem;
+            }
+
+            .card-header {
+                padding: 1rem 0.75rem 0.25rem;
+            }
+            
+            .card-body {
+                padding: 0.75rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .brand-logo {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            .brand-name {
+                font-size: 1.1rem;
+            }
+            
+            .nav-tabs .nav-link {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Para dispositivos com tela baixa */
+        @media (max-height: 700px) {
+            .brand-logo {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .brand-name {
+                font-size: 1.1rem;
+            }
+            
+            .brand-description {
+                font-size: 0.75rem;
+                margin-top: 0.1rem;
+            }
+            
+            .card {
+                max-height: calc(100vh - 120px);
+            }
+            
+            .form-label, .form-control, .btn-primary {
+                font-size: 0.8rem;
+            }
+            
+            .form-control {
+                padding: 0.6rem 0.8rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .btn-primary {
+                padding: 0.6rem 1rem;
+            }
+            
+            .footer-text {
+                margin-top: 0.5rem;
+                font-size: 0.7rem;
+            }
+        }
+
+        /* Para telas maiores */
+        @media (min-width: 992px) and (min-height: 800px) {
+            .login-container {
+                max-width: 520px;
+            }
+            
+            .card {
+                box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,0.1);
+            }
+            
+            .brand-logo {
+                width: 70px;
+                height: 70px;
+                font-size: 1.75rem;
+            }
+            
+            .brand-name {
+                font-size: 1.75rem;
+            }
+            
+            .card-header {
+                padding: 1.5rem 1.5rem 0.5rem;
+            }
+            
+            .card-body {
+                padding: 1.5rem;
+            }
+            
+            .form-control {
+                padding: 0.875rem 1.25rem;
+                font-size: 1rem;
+            }
+            
+            .btn-primary {
+                padding: 0.875rem 1.5rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="brand-container">
+            <div class="brand-logo">
+                <i class="fas fa-microchip"></i>
+            </div>
+            <h1 class="brand-name">Ikli Tecnologia</h1>
+            <p class="brand-description">Sistema de Gestão de Lavanderia</p>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs" id="authTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-panel" type="button" role="tab" aria-controls="login-panel" aria-selected="true">
+                            <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-panel" type="button" role="tab" aria-controls="register-panel" aria-selected="false">
+                            <i class="fas fa-user-plus me-2"></i>Criar Conta
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="authTabContent">
+                    <!-- Alerta para mensagens -->
+                    <div id="auth-alert" class="alert alert-danger d-none" role="alert">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="alert-message"></span>
+                    </div>
+                    
+                    <!-- Painel de Login -->
+                    <div class="tab-pane fade show active" id="login-panel" role="tabpanel" aria-labelledby="login-tab">
+                        <form id="login-form">
+                            <div class="mb-3">
+                                <label for="login-email" class="form-label">
+                                    <i class="fas fa-envelope me-2"></i>Email
+                                </label>
+                                <input type="email" class="form-control" id="login-email" placeholder="seu@grupohi.com.br" pattern=".+@grupohi\.com\.br$" title="Apenas emails do domínio @grupohi.com.br são permitidos" required>
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>Apenas emails do domínio @grupohi.com.br são permitidos
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label for="login-password" class="form-label">
+                                    <i class="fas fa-lock me-2"></i>Senha
+                                </label>
+                                <input type="password" class="form-control" id="login-password" placeholder="Sua senha" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                                </button>
+                            </div>
+                            <div class="text-center">
+                                <a href="#" class="forgot-password" id="forgot-password">
+                                    <i class="fas fa-key me-2"></i>Esqueceu sua senha?
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Painel de Registro -->
+                    <div class="tab-pane fade" id="register-panel" role="tabpanel" aria-labelledby="register-tab">
+                        <form id="register-form">
+                            <div class="mb-3">
+                                <label for="register-name" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Nome
+                                </label>
+                                <input type="text" class="form-control" id="register-name" placeholder="Seu nome completo" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="register-email" class="form-label">
+                                    <i class="fas fa-envelope me-2"></i>Email
+                                </label>
+                                <input type="email" class="form-control" id="register-email" placeholder="seu@grupohi.com.br" pattern=".+@grupohi\.com\.br$" title="Apenas emails do domínio @grupohi.com.br são permitidos" required>
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>Apenas emails do domínio @grupohi.com.br são permitidos
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="register-password" class="form-label">
+                                    <i class="fas fa-lock me-2"></i>Senha
+                                </label>
+                                <input type="password" class="form-control" id="register-password" placeholder="Mínimo 6 caracteres" required minlength="6">
+                            </div>
+                            <div class="mb-4">
+                                <label for="register-confirm-password" class="form-label">
+                                    <i class="fas fa-shield-alt me-2"></i>Confirme a Senha
+                                </label>
+                                <input type="password" class="form-control" id="register-confirm-password" placeholder="Confirme sua senha" required minlength="6">
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>Criar Conta
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="footer-text">© 2024 Ikli Tecnologia. Todos os direitos reservados.</p>
+    </div>
+
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <!-- Firebase Auth -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Scripts personalizados -->
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html> 

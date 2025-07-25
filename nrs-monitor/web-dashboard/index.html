@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Lojas</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Configuração do Firebase -->
+    <script src="firebase-config.js"></script>
+    <style>
+        /* Sidebar Styles */
+        body {
+            overflow-x: hidden;
+            background-color: #f8f9fa;
+        }
+        
+        #wrapper {
+            display: flex;
+        }
+        
+        #sidebar-wrapper {
+            min-height: 100vh;
+            width: 250px;
+            background: #343a40;
+            color: #fff;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            left: 0;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #sidebar-wrapper .sidebar-heading {
+            padding: 1.5rem 1rem;
+            font-size: 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #sidebar-wrapper .sidebar-heading i {
+            margin-right: 10px;
+        }
+        
+        #sidebar-wrapper .sidebar-heading .sidebar-collapse {
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        #sidebar-wrapper .sidebar-heading .sidebar-collapse:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-collapsed {
+            width: 60px !important;
+        }
+        
+        .sidebar-collapsed .sidebar-heading span,
+        .sidebar-collapsed .sidebar-menu span,
+        .sidebar-collapsed .sidebar-user-section {
+            display: none;
+        }
+        
+        .sidebar-collapsed + #page-content-wrapper {
+            padding-left: 60px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar-collapsed + #page-content-wrapper {
+                padding-left: 0;
+            }
+        }
+        
+        #page-content-wrapper {
+            min-width: 100vw;
+            padding-left: 250px;
+        }
+        
+        .sidebar-menu {
+            padding: 0;
+            list-style: none;
+            margin-top: 1rem;
+            flex-grow: 1;
+        }
+        
+        .sidebar-menu li a {
+            padding: 0.8rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            display: block;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-menu li a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-left: 3px solid #007bff;
+        }
+        
+        .sidebar-menu li a.active {
+            background: rgba(0, 123, 255, 0.2);
+            color: #fff;
+            border-left: 3px solid #007bff;
+        }
+        
+        .sidebar-menu li a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* User section in sidebar */
+        .sidebar-user-section {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-user-info {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sidebar-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+        
+        .sidebar-user-details {
+            overflow: hidden;
+        }
+        
+        .sidebar-user-name {
+            color: #fff;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .sidebar-user-email {
+            display: block;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .sidebar-user-actions {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-user-action {
+            padding: 0.5rem 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        
+        .sidebar-user-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .sidebar-user-action-danger {
+            color: #ff7b7b;
+        }
+        
+        .sidebar-user-action-danger:hover {
+            background: rgba(255, 0, 0, 0.15);
+            color: #ff7b7b;
+        }
+        
+        .sidebar-user-action i {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+        }
+        
+        .top-navbar {
+            position: sticky;
+            top: 0;
+            z-index: 99;
+            height: 60px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            background: #fff;
+            padding: 0 1.5rem;
+        }
+        
+        .content-area {
+            padding: 0;
+            margin-top: 0;
+        }
+        
+        /* Ajustar padding interno para manter espaçamento entre componentes */
+        .content-area .row {
+            padding: 0.75rem 2rem;
+        }
+        
+        /* Garantir que a primeira row não tenha padding-top */
+        .content-area .row:first-child {
+            padding-top: 0.5rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: -250px;
+            }
+            
+            #page-content-wrapper {
+                padding-left: 0;
+            }
+            
+            #wrapper.toggled #sidebar-wrapper {
+                margin-left: 0;
+            }
+            
+            .top-navbar .btn-toggle {
+                display: block !important;
+            }
+        }
+        
+        .card {
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            padding: 0.8rem 1rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .device-count {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-online {
+            background-color: #28a745;
+        }
+        .status-offline {
+            background-color: #dc3545;
+        }
+        .device-icon {
+            background-color: rgba(0, 123, 255, 0.1);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #007bff;
+            margin-right: 10px;
+            font-size: 0.9rem;
+        }
+        .btn-acessar {
+            border-radius: 6px;
+            padding: 6px 15px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        .btn-acessar:hover {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+        .btn-acessar.disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .device-item {
+            display: flex;
+            align-items: center;
+        }
+        .badge {
+            padding: 5px 12px;
+            font-weight: 500;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+        .search-bar {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .search-bar .form-control {
+            padding-left: 40px;
+            border-radius: 8px;
+            height: 46px;
+        }
+        .search-bar .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 12px;
+            color: #6c757d;
+        }
+        .card-body {
+            padding: 0.8rem;
+        }
+        .card-footer {
+            padding: 0.6rem;
+            background-color: #fff;
+        }
+        .small-text {
+            font-size: 0.8rem;
+        }
+        .cursor-pointer {
+            cursor: pointer;
+        }
+        .card-hover {
+            transition: all 0.2s ease;
+        }
+        .card-hover:hover {
+            background-color: #f8f9fa;
+        }
+        .card-hover.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .dropdown-menu {
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        .dropdown-item {
+            padding: 8px 16px;
+        }
+        .dropdown-item i {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+        }
+        .user-dropdown {
+            min-width: 200px;
+        }
+        .user-info {
+            padding: 12px 16px;
+            background-color: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+
+        /* Estilos para o mapa */
+        #map-container {
+            height: 320px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        #brasil-map {
+            height: 100%;
+            width: 100%;
+        }
+        .map-marker-online, .map-marker-offline {
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .map-marker-online:hover, .map-marker-offline:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            z-index: 1000 !important;
+        }
+        
+        .map-marker-online {
+            background-color: #28a745;
+        }
+        .map-marker-offline {
+            background-color: #dc3545;
+        }
+        .map-popup-content {
+            text-align: center;
+            font-weight: bold;
+        }
+        .store-popup .leaflet-popup-content-wrapper {
+            border-radius: 10px;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+        }
+        .store-popup .leaflet-popup-content {
+            margin: 12px;
+            min-width: 240px;
+        }
+        .store-popup .leaflet-popup-tip {
+            background-color: white;
+        }
+        .map-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mapa-legenda {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            margin-bottom: 0;
+        }
+        .legenda-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+        .legenda-cor {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+            display: inline-block;
+        }
+        .store-popup .btn-primary {
+            color: white !important;
+            font-weight: 500;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+        }
+
+        /* Estilo para a coluna de ações */
+        #lojas-table td:last-child {
+            width: 120px;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        /* Estilo para os botões de ação */
+        .btn-acessar {
+            width: 100%;
+            min-width: 100px;
+            display: inline-block;
+        }
+
+        /* Garante que a célula mantenha sua largura */
+        .dataTables_wrapper .dataTables_scroll .dataTables_scrollBody td:last-child {
+            width: 120px !important;
+            min-width: 120px !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading">
+                <div>
+                    <i class="fas fa-microchip"></i>
+                    <span>Ikli Tecnologia</span>
+                </div>
+                <div class="sidebar-collapse" id="sidebar-collapse">
+                    <i class="fas fa-chevron-left"></i>
+                </div>
+            </div>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="index.html" class="active">
+                        <i class="fas fa-home"></i>
+                        <span>Início</span>
+                        </a>
+                </li>
+                <li>
+                    <a href="lojas.html">
+                        <i class="fas fa-store"></i>
+                        <span>Lojas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="logs.html">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Registros</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- User Profile at bottom of sidebar -->
+            <div class="mt-auto sidebar-user-section">
+                <div class="sidebar-user-info">
+                    <img src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff" alt="User" class="sidebar-user-avatar">
+                    <div class="sidebar-user-details">
+                        <h6 class="sidebar-user-name mb-0" id="user-name">Carregando...</h6>
+                        <small class="sidebar-user-email" id="user-email">carregando@email.com</small>
+            </div>
+        </div>
+                <div class="sidebar-user-actions">
+                    <a href="#" id="user-profile" class="sidebar-user-action">
+                        <i class="fas fa-id-card"></i> Meu Perfil
+                    </a>
+                    <a href="#" id="change-password" class="sidebar-user-action">
+                        <i class="fas fa-key"></i> Alterar Senha
+                    </a>
+                    
+                    <a href="#" id="logout-btn" class="sidebar-user-action sidebar-user-action-danger">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white top-navbar">
+                <div class="container-fluid">
+                    <button class="btn btn-outline-secondary d-md-none me-3 btn-toggle" id="menu-toggle" type="button">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h5 class="mb-0 text-primary">Dashboard</h5>
+                    <div class="ms-auto">
+                        <span id="data-source-badge" class="badge bg-light text-dark d-none">
+                            <i class="fas fa-database me-1"></i>
+                            <span id="data-source-text">Carregando...</span>
+                        </span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="content-area">
+        <!-- Resumo estatístico -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <h6 class="card-title text-primary fw-bold mb-4">
+                            <i class="fas fa-store-alt me-2"></i>STATUS DAS LOJAS
+                        </h6>
+                        
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <h5 class="m-0">Status</h5>
+                                    <span class="badge rounded-pill bg-light text-dark border">Total: <span id="total-lojas">0</span></span>
+                                </div>
+                                <div class="progress" style="height: 10px; border-radius: 5px;">
+                                    <div class="progress-bar bg-success" id="lojas-online-progress" role="progressbar" 
+                                        style="width: 0%; border-radius: 5px 0 0 5px;" 
+                                        aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar bg-danger" id="lojas-offline-progress" role="progressbar" 
+                                        style="width: 0%; border-radius: 0 5px 5px 0;" 
+                                        aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="status-card p-3 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="status-dot bg-success mb-2" style="width: 12px; height: 12px; border-radius: 50%;"></div>
+                                            <h6 class="m-0 text-success">Online</h6>
+                                        </div>
+                                        <div class="text-center">
+                                            <h3 class="m-0 text-success fw-bold" id="lojas-online-count">0</h3>
+                                            <small class="text-muted">(<span id="lojas-online-percent">0%</span>)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="status-card p-3 rounded-3 bg-danger bg-opacity-10 border border-danger border-opacity-25">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="status-dot bg-danger mb-2" style="width: 12px; height: 12px; border-radius: 50%;"></div>
+                                            <h6 class="m-0 text-danger">Offline</h6>
+                                        </div>
+                                        <div class="text-center">
+                                            <h3 class="m-0 text-danger fw-bold" id="lojas-offline-count">0</h3>
+                                            <small class="text-muted">(<span id="lojas-offline-percent">0%</span>)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mapa de Lojas -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <div class="map-card-header">
+                            <h6 class="mb-0 text-primary">
+                                <i class="fas fa-map-marked-alt me-2"></i>Mapa de Lojas
+                            </h6>
+                            <div>
+                                <ul class="mapa-legenda">
+                                    <li class="legenda-item">
+                                        <span class="legenda-cor status-online"></span>
+                                        <span>Online</span>
+                                    </li>
+                                    <li class="legenda-item">
+                                        <span class="legenda-cor status-offline"></span>
+                                        <span>Offline</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="map-container">
+                            <div id="brasil-map"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    
+    <!-- Modal para alterar senha -->
+    <div class="modal fade" id="passwordModal" tabindex="-1" aria-labelledby="passwordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="passwordModalLabel">Alterar Senha</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Um e-mail será enviado para você com instruções para redefinir sua senha.
+                    </div>
+                    <form id="password-form">
+                        <div class="mb-3">
+                            <label for="password-email" class="form-label">Confirme seu E-mail</label>
+                            <input type="email" class="form-control" id="password-email" readonly>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="send-password-reset">Enviar E-mail</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Perfil do usuário Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="profileModalLabel">Meu Perfil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="profile-alert" class="alert alert-danger d-none"></div>
+                    <form id="profile-form">
+                        <div class="mb-3">
+                            <label for="profile-name" class="form-label">Nome Completo</label>
+                            <input type="text" class="form-control" id="profile-name" placeholder="Seu nome">
+                        </div>
+                        <div class="mb-3">
+                            <label for="profile-email" class="form-label">E-mail</label>
+                            <input type="email" class="form-control" id="profile-email" readonly>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="save-profile">Salvar Alterações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Reset em Lote -->
+    <div class="modal fade" id="batchResetModal" tabindex="-1" aria-labelledby="batchResetModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="batchResetModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Reset em Lote
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Esta operação irá reiniciar os totens de várias lojas simultaneamente. Use com cautela.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Selecione o escopo:</label>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="resetScope" id="resetScopeFiltered" value="filtered" checked>
+                            <label class="form-check-label" for="resetScopeFiltered">
+                                Apenas lojas filtradas atualmente
+                            </label>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="resetScope" id="resetScopeRegion" value="region">
+                            <label class="form-check-label" for="resetScopeRegion">
+                                Por Região
+                            </label>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="resetScope" id="resetScopeState" value="state">
+                            <label class="form-check-label" for="resetScopeState">
+                                Por Estado
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="resetRegionContainer" style="display: none;">
+                        <label for="resetRegion" class="form-label">Região:</label>
+                        <select class="form-select" id="resetRegion">
+                            <option value="norte">Norte</option>
+                            <option value="nordeste">Nordeste</option>
+                            <option value="centro-oeste">Centro-Oeste</option>
+                            <option value="sudeste">Sudeste</option>
+                            <option value="sul">Sul</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="resetStateContainer" style="display: none;">
+                        <label for="resetState" class="form-label">Estado:</label>
+                        <select class="form-select" id="resetState">
+                            <!-- Estados serão carregados dinamicamente -->
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="resetType" class="form-label fw-bold">Tipo de Reset:</label>
+                        <select class="form-select" id="resetType">
+                            <option value="restart">Reiniciar</option>
+                            <option value="shutdown">Desligar</option>
+                        </select>
+                    </div>
+                    
+                    <div id="reset-preview" class="mt-3">
+                        <p><strong>Lojas afetadas:</strong> <span id="affected-stores-count">Calculando...</span></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirm-batch-reset">
+                        <i class="fas fa-power-off me-2"></i>Executar Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script src="auth-check.js"></script>
+    <script src="firebase-logs.js"></script>
+    <script src="app.js"></script>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.getElementById("menu-toggle").addEventListener("click", function(e) {
+            e.preventDefault();
+            document.getElementById("wrapper").classList.toggle("toggled");
+        });
+        
+        // Toggle sidebar collapse
+        document.getElementById("sidebar-collapse").addEventListener("click", function(e) {
+            e.preventDefault();
+            document.getElementById("sidebar-wrapper").classList.toggle("sidebar-collapsed");
+        });
+    </script>
+</body>
+</html>

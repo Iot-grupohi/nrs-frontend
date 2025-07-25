@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Ações</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.7.0/css/buttons.bootstrap4.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="logs.css">
+    <style>
+        /* Sidebar Styles */
+        body {
+            overflow-x: hidden;
+            background-color: #f8f9fa;
+        }
+        
+        #wrapper {
+            display: flex;
+        }
+        
+        #sidebar-wrapper {
+            min-height: 100vh;
+            width: 250px;
+            background: #343a40;
+            color: #fff;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            left: 0;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #sidebar-wrapper .sidebar-heading {
+            padding: 1.5rem 1rem;
+            font-size: 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #sidebar-wrapper .sidebar-heading i {
+            margin-right: 10px;
+        }
+        
+        #sidebar-wrapper .sidebar-heading .sidebar-collapse {
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        #sidebar-wrapper .sidebar-heading .sidebar-collapse:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-collapsed {
+            width: 60px !important;
+        }
+        
+        .sidebar-collapsed .sidebar-heading span,
+        .sidebar-collapsed .sidebar-menu span,
+        .sidebar-collapsed .sidebar-user-section {
+            display: none;
+        }
+        
+        .sidebar-collapsed + #page-content-wrapper {
+            padding-left: 60px;
+        }
+        
+        #page-content-wrapper {
+            min-width: 100vw;
+            padding-left: 250px;
+        }
+        
+        .sidebar-menu {
+            padding: 0;
+            list-style: none;
+            margin-top: 1rem;
+            flex-grow: 1;
+        }
+        
+        .sidebar-menu li a {
+            padding: 0.8rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            display: block;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-menu li a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-left: 3px solid #007bff;
+        }
+        
+        .sidebar-menu li a.active {
+            background: rgba(0, 123, 255, 0.2);
+            color: #fff;
+            border-left: 3px solid #007bff;
+        }
+        
+        .sidebar-menu li a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* User section in sidebar */
+        .sidebar-user-section {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-user-info {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sidebar-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+        
+        .sidebar-user-details {
+            overflow: hidden;
+        }
+        
+        .sidebar-user-name {
+            color: #fff;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .sidebar-user-email {
+            display: block;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .sidebar-user-actions {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-user-action {
+            padding: 0.5rem 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        
+        .sidebar-user-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .sidebar-user-action-danger {
+            color: #ff7b7b;
+        }
+        
+        .sidebar-user-action-danger:hover {
+            background: rgba(255, 0, 0, 0.15);
+            color: #ff7b7b;
+        }
+        
+        .sidebar-user-action i {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+        }
+        
+        .top-navbar {
+            position: sticky;
+            top: 0;
+            z-index: 99;
+            height: 60px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            background: #fff;
+            padding: 0 1.5rem;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+        
+        .content-area {
+            padding: 0;
+            margin-top: 0;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: -250px;
+            }
+            
+            #page-content-wrapper {
+                padding-left: 0;
+            }
+            
+            #wrapper.toggled #sidebar-wrapper {
+                margin-left: 0;
+            }
+            
+            .top-navbar .btn-toggle {
+                display: block !important;
+            }
+            
+            .sidebar-collapsed + #page-content-wrapper {
+                padding-left: 0;
+            }
+        }
+        
+        .dropdown-menu {
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        .dropdown-item {
+            padding: 8px 16px;
+        }
+        .dropdown-item i {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+        }
+        .user-dropdown {
+            min-width: 200px;
+        }
+        .user-info {
+            padding: 12px 16px;
+            background-color: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+        /* Estilos para os filtros */
+        .filter-card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .filter-card .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            padding: 15px 20px;
+        }
+        .filter-section {
+            padding: 15px;
+        }
+        .date-filters .form-control {
+            border-radius: 6px;
+        }
+        /* Estilos adicionais para destacar a tabela */
+        #logsTable {
+            border-collapse: separate;
+            border-spacing: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+            table-layout: fixed;
+            margin-bottom: 0;
+        }
+        
+        #logsTable thead th {
+            font-weight: 600;
+            border-bottom: 1px solid #dee2e6;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            padding: 10px 5px 10px;
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 1;
+        }
+        
+        #logsTable tbody tr:first-child td {
+            padding-top: 12px;
+        }
+        
+        #logsTable thead {
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        #logsTable tbody tr {
+            transition: all 0.2s;
+        }
+        
+        #logsTable tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.1) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        #logsTable tbody td {
+            padding: 10px 5px;
+            vertical-align: middle;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Adicionar mais espaço após o último registro */
+        #logsTable tbody tr:last-child td {
+            padding-bottom: 15px;
+        }
+        
+        /* Ajuste para a responsividade da tabela */
+        .table-responsive {
+            padding-bottom: 10px;
+        }
+        
+        /* Larguras específicas para colunas */
+        #logsTable th:nth-child(1), #logsTable td:nth-child(1) { width: 9%; text-align: center; } /* Data */
+        #logsTable th:nth-child(2), #logsTable td:nth-child(2) { width: 8%; text-align: center; } /* Horário */
+        #logsTable th:nth-child(3), #logsTable td:nth-child(3) { width: 7%; text-align: center; } /* Store */
+        #logsTable th:nth-child(4), #logsTable td:nth-child(4) { width: 10%; text-align: center; } /* User */
+        #logsTable th:nth-child(5), #logsTable td:nth-child(5) { width: 12%; text-align: center; } /* Operação */
+        #logsTable th:nth-child(6), #logsTable td:nth-child(6) { width: 8%; text-align: center; } /* Máquina */
+        #logsTable th:nth-child(7), #logsTable td:nth-child(7) { width: 14%; text-align: center; } /* Produto */
+        #logsTable th:nth-child(8), #logsTable td:nth-child(8) { width: 10%; text-align: center; } /* Dosagem */
+        #logsTable th:nth-child(9), #logsTable td:nth-child(9) { width: 8%; text-align: center; } /* Tempo */
+        
+        /* Destaque para colunas específicas */
+        #logsTable .badge {
+            font-size: 85%;
+            padding: 5px 8px;
+        }
+        
+        /* Estilos para cabeçalhos de coluna quando ordenados */
+        #logsTable thead .sorting:after,
+        #logsTable thead .sorting_asc:after,
+        #logsTable thead .sorting_desc:after {
+            opacity: 1;
+        }
+        
+        /* Alternar cores de linhas com cores mais suaves */
+        #logsTable tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        #logsTable tbody tr:nth-of-type(even) {
+            background-color: rgba(255, 255, 255, 1);
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading">
+                <div>
+                    <i class="fas fa-microchip"></i>
+                    <span>Ikli Tecnologia</span>
+                </div>
+                <div class="sidebar-collapse" id="sidebar-collapse">
+                    <i class="fas fa-chevron-left"></i>
+                </div>
+            </div>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="index.html">
+                        <i class="fas fa-home"></i>
+                        <span>Início</span>
+                        </a>
+                </li>
+                <li>
+                    <a href="lojas.html">
+                        <i class="fas fa-store"></i>
+                        <span>Lojas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="logs.html" class="active">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Registros</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- User Profile at bottom of sidebar -->
+            <div class="mt-auto sidebar-user-section">
+                <div class="sidebar-user-info">
+                    <img src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff" alt="User" class="sidebar-user-avatar">
+                    <div class="sidebar-user-details">
+                        <h6 class="sidebar-user-name mb-0" id="currentUser">Usuário</h6>
+                        <small class="sidebar-user-email" id="currentUserEmail">usuario@email.com</small>
+                    </div>
+                </div>
+                <div class="sidebar-user-actions">
+                    <a href="#" id="user-profile" class="sidebar-user-action">
+                        <i class="fas fa-id-card"></i> Meu Perfil
+                    </a>
+                    <a href="#" id="change-password" class="sidebar-user-action">
+                        <i class="fas fa-key"></i> Alterar Senha
+                    </a>
+                 
+                    <a href="#" id="logout-btn" class="sidebar-user-action sidebar-user-action-danger">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white top-navbar mb-0">
+                <div class="container-fluid">
+                    <button class="btn btn-outline-secondary d-md-none me-3 btn-toggle" id="menu-toggle" type="button">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h5 class="mb-0 text-primary">Registro de Ações</h5>
+                    <div class="ms-auto">
+                        <span id="data-source-badge" class="badge bg-light text-dark d-none">
+                            <i class="fas fa-database me-1"></i>
+                            <span id="data-source-text">Carregando...</span>
+                        </span>
+                        <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFilters" aria-expanded="false" aria-controls="collapseFilters">
+                            <i class="fas fa-filter me-1"></i>Filtros
+                        </button>
+            </div>
+        </div>
+    </nav>
+
+            <!-- Filtros de Busca e Tabela em um único card -->
+            <div class="card mx-md-5 m-0 mt-0 border-top-0 rounded-0 rounded-bottom">
+                <div class="collapse" id="collapseFilters">
+                    <div class="card-body pt-3 pb-2 border-bottom">
+                        <div class="row filter-section">
+                            <div class="col-md-4 mb-3">
+                                <label for="filtroData" class="form-label">Data:</label>
+                                <input type="date" class="form-control" id="filtroData">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="filtroLoja" class="form-label">Loja:</label>
+                                <select class="form-select" id="filtroLoja">
+                                    <option value="">Todas as Lojas</option>
+                                    <!-- Opções serão preenchidas via JavaScript -->
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="filtroOperacao" class="form-label">Operação:</label>
+                                <select class="form-select" id="filtroOperacao">
+                                    <option value="">Todas as Operações</option>
+                                    <option value="Lavadora">Lavadora</option>
+                                    <option value="Secadora">Secadora</option>
+                                    <option value="Dosadora">Dosadora</option>
+                                    <option value="Reset">Reset</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="filtroMaquina" class="form-label">Máquina:</label>
+                                <select class="form-select" id="filtroMaquina">
+                                    <option value="">Todas as Máquinas</option>
+                                    <!-- Opções serão preenchidas via JavaScript -->
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="filtroPesquisa" class="form-label">Pesquisa:</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="filtroPesquisa" placeholder="Pesquisar em todos os campos...">
+                                    <button class="btn btn-outline-secondary" type="button" id="btnPesquisar">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-12 mt-2 d-flex justify-content-between">
+                                <div class="export-buttons">
+                                    <button id="btnExportCsv" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="fas fa-file-csv me-1"></i>CSV
+                                    </button>
+                                    <button id="btnExportExcel" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="fas fa-file-excel me-1"></i>Excel
+                                    </button>
+                                    <button id="btnExportPdf" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="fas fa-file-pdf me-1"></i>PDF
+                                    </button>
+                                    <button id="btnExportPrint" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="fas fa-print me-1"></i>Imprimir
+                                    </button>
+                                </div>
+                                <div>
+                                    <button id="btnLimparFiltros" class="btn btn-outline-secondary me-2">
+                                        <i class="fas fa-eraser me-1"></i>Limpar Filtros
+                                    </button>
+                                    <button id="btnAplicarFiltros" class="btn btn-primary">
+                                        <i class="fas fa-search me-1"></i>Aplicar Filtros
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        <!-- Tabela de Registros -->
+                <div class="card-body p-0 mt-0 position-relative">
+                <div class="table-responsive">
+                        <table id="logsTable" class="table table-striped table-hover mb-0" style="width:100%">
+                            <thead class="table-light">
+                            <tr>
+                                    <th class="text-center">Data</th>
+                                    <th class="text-center">Horário</th>
+                                    <th class="text-center">Loja</th>
+                                    <th class="text-center">Usuário</th>
+                                    <th class="text-center">Operação</th>
+                                    <th class="text-center">Máquina</th>
+                                    <th class="text-center">Produto</th>
+                                    <th class="text-center">Dosagem</th>
+                                    <th class="text-center">Tempo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dados serão preenchidos via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner Overlay - Centralizado na página inteira -->
+    <div id="loadingOverlay" style="position: fixed; width: calc(100% - 250px); height: 100%; display: flex; justify-content: center; align-items: center; background-color: rgba(255, 255, 255, 0.9); z-index: 9999; top: 0; left: 250px; margin-left: auto;">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-2 text-primary fw-bold">Carregando registros...</p>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes -->
+    <div class="modal fade" id="detalhesModal" tabindex="-1" aria-labelledby="detalhesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detalhesModalLabel">Detalhes do Registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group list-group-flush" id="detalhesConteudo">
+                        <!-- Conteúdo será preenchido dinamicamente -->
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes (Legado) -->
+    <div class="modal fade modal-detalhes" id="modalDetalhes" tabindex="-1" role="dialog" aria-labelledby="modalDetalhesLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalDetalhesLabel">Detalhes do Registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">
+                            <span class="field-name">ID:</span>
+                            <span class="field-value" id="detalheId"></span>
+                        </li>
+                        <li class="list-group-item">
+                            <span class="field-name">Data/Hora:</span>
+                            <span class="field-value" id="detalheDataHora"></span>
+                        </li>
+                        <li class="list-group-item">
+                            <span class="field-name">Equipamento:</span>
+                            <span class="field-value" id="detalheEquipamento"></span>
+                        </li>
+                        <li class="list-group-item">
+                            <span class="field-name">Usuário:</span>
+                            <span class="field-value" id="detalheUsuario"></span>
+                        </li>
+                        <li class="list-group-item">
+                            <span class="field-name">Tipo:</span>
+                            <span class="field-value" id="detalheTipo"></span>
+                        </li>
+                        <li class="list-group-item">
+                            <span class="field-name">Máquina:</span>
+                            <span class="field-value" id="detalheMaquina"></span>
+                        </li>
+                        <li class="list-group-item">
+                            <span class="field-name">Descrição:</span>
+                            <span class="field-value" id="detalheDescricao"></span>
+                        </li>
+                    </ul>
+                    
+                    <h6>Dados Adicionais:</h6>
+                    <div id="detalhesDados" class="code-block mb-3">
+                        <!-- JSON formatado será exibido aqui -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Dados Brutos -->
+    <div class="modal fade" id="dadosBrutosModal" tabindex="-1" aria-labelledby="dadosBrutosModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dadosBrutosModalLabel">Dados Brutos do Registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Estes são os dados brutos do registro como estão armazenados no Firestore. Útil para identificar quais campos estão disponíveis.
+                    </div>
+                    <pre id="dadosBrutosJson" class="bg-light p-3 rounded" style="max-height: 500px; overflow-y: auto;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Reset em Lote -->
+    <div class="modal fade" id="batchResetModal" tabindex="-1" aria-labelledby="batchResetModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="batchResetModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Reset em Lote
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Esta operação irá reiniciar os totens de várias lojas simultaneamente. Use com cautela.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Selecione o escopo:</label>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="resetScope" id="resetScopeFiltered" value="filtered" checked>
+                            <label class="form-check-label" for="resetScopeFiltered">
+                                Apenas lojas filtradas atualmente
+                            </label>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="resetScope" id="resetScopeRegion" value="region">
+                            <label class="form-check-label" for="resetScopeRegion">
+                                Por Região
+                            </label>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="resetScope" id="resetScopeState" value="state">
+                            <label class="form-check-label" for="resetScopeState">
+                                Por Estado
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="resetRegionContainer" style="display: none;">
+                        <label for="resetRegion" class="form-label">Região:</label>
+                        <select class="form-select" id="resetRegion">
+                            <option value="norte">Norte</option>
+                            <option value="nordeste">Nordeste</option>
+                            <option value="centro-oeste">Centro-Oeste</option>
+                            <option value="sudeste">Sudeste</option>
+                            <option value="sul">Sul</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="resetStateContainer" style="display: none;">
+                        <label for="resetState" class="form-label">Estado:</label>
+                        <select class="form-select" id="resetState">
+                            <!-- Estados serão carregados dinamicamente -->
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="resetType" class="form-label fw-bold">Tipo de Reset:</label>
+                        <select class="form-select" id="resetType">
+                            <option value="restart">Reiniciar</option>
+                            <option value="shutdown">Desligar</option>
+                        </select>
+                    </div>
+                    
+                    <div id="reset-preview" class="mt-3">
+                        <p><strong>Lojas afetadas:</strong> <span id="affected-stores-count">Calculando...</span></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirm-batch-reset">
+                        <i class="fas fa-power-off me-2"></i>Executar Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.7.0/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.7.0/js/buttons.bootstrap4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.7.0/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.7.0/js/buttons.print.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    
+    <!-- Custom Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="logs.js"></script>
+    <script src="batch-reset.js"></script>
+    
+    <!-- Fallback para esconder o spinner -->
+    <script>
+        // Garantir que o spinner seja ocultado após um tempo curto
+        setTimeout(function() {
+            var loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                console.log('Forçando ocultação do spinner via timeout direto');
+                loadingOverlay.style.display = 'none';
+            }
+        }, 4000); // 4 segundos de timeout direto
+    </script>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.getElementById("menu-toggle").addEventListener("click", function(e) {
+            e.preventDefault();
+            document.getElementById("wrapper").classList.toggle("toggled");
+        });
+        
+        // Toggle sidebar collapse
+        document.getElementById("sidebar-collapse").addEventListener("click", function(e) {
+            e.preventDefault();
+            document.getElementById("sidebar-wrapper").classList.toggle("sidebar-collapsed");
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Dispositivos</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Sidebar Styles */
+        body {
+            overflow-x: hidden;
+            background-color: #f8f9fa;
+        }
+        
+        #wrapper {
+            display: flex;
+        }
+        
+        #sidebar-wrapper {
+            min-height: 100vh;
+            width: 250px;
+            background: #343a40;
+            color: #fff;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            left: 0;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #sidebar-wrapper .sidebar-heading {
+            padding: 1.5rem 1rem;
+            font-size: 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #sidebar-wrapper .sidebar-heading i {
+            margin-right: 10px;
+        }
+        
+        #sidebar-wrapper .sidebar-heading .sidebar-collapse {
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        #sidebar-wrapper .sidebar-heading .sidebar-collapse:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-collapsed {
+            width: 60px !important;
+        }
+        
+        .sidebar-collapsed .sidebar-heading span,
+        .sidebar-collapsed .sidebar-menu span,
+        .sidebar-collapsed .sidebar-user-section {
+            display: none;
+        }
+        
+        .sidebar-collapsed + #page-content-wrapper {
+            padding-left: 60px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar-collapsed + #page-content-wrapper {
+                padding-left: 0;
+            }
+        }
+        
+        #page-content-wrapper {
+            min-width: 100vw;
+            padding-left: 250px;
+        }
+        
+        .sidebar-menu {
+            padding: 0;
+            list-style: none;
+            margin-top: 1rem;
+            flex-grow: 1;
+        }
+        
+        .sidebar-menu li a {
+            padding: 0.8rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            display: block;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-menu li a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-left: 3px solid #007bff;
+        }
+        
+        .sidebar-menu li a.active {
+            background: rgba(0, 123, 255, 0.2);
+            color: #fff;
+            border-left: 3px solid #007bff;
+        }
+        
+        .sidebar-menu li a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* User section in sidebar */
+        .sidebar-user-section {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-user-info {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sidebar-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+        
+        .sidebar-user-details {
+            overflow: hidden;
+        }
+        
+        .sidebar-user-name {
+            color: #fff;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .sidebar-user-email {
+            display: block;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .sidebar-user-actions {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-user-action {
+            padding: 0.5rem 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        
+        .sidebar-user-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .sidebar-user-action-danger {
+            color: #ff7b7b;
+        }
+        
+        .sidebar-user-action-danger:hover {
+            background: rgba(255, 0, 0, 0.15);
+            color: #ff7b7b;
+        }
+        
+        .sidebar-user-action i {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+        }
+        
+        .top-navbar {
+            position: sticky;
+            top: 0;
+            z-index: 99;
+            height: 60px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            background: #fff;
+            padding: 0 1.5rem;
+        }
+        
+        .content-area {
+            padding: 2rem;
+            margin-top: 20px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: -250px;
+            }
+            
+            #page-content-wrapper {
+                padding-left: 0;
+            }
+            
+            #wrapper.toggled #sidebar-wrapper {
+                margin-left: 0;
+            }
+            
+            .top-navbar .btn-toggle {
+                display: block !important;
+            }
+        }
+
+        .nav-tabs .nav-link {
+            border-radius: 10px 10px 0 0;
+            padding: 10px 20px;
+            font-weight: 500;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background-color: #f8f9fa;
+            border-bottom-color: #f8f9fa;
+        }
+        
+        .tab-content {
+            background-color: #f8f9fa;
+            border-radius: 0 10px 10px 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .device-card {
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .device-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .device-header {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .device-controls {
+            padding: 15px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        .status-online {
+            background-color: #28a745;
+        }
+        
+        .status-offline {
+            background-color: #dc3545;
+        }
+        
+        .status-warning {
+            background-color: #ffc107;
+        }
+        
+        .dropdown-menu {
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        
+        .dropdown-item {
+            padding: 8px 16px;
+        }
+        
+        .dropdown-item i {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+        }
+        
+        .user-dropdown {
+            min-width: 200px;
+        }
+        
+        .user-info {
+            padding: 12px 16px;
+            background-color: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading">
+                <div>
+                    <i class="fas fa-microchip"></i>
+                    <span>Ikli Tecnologia</span>
+                </div>
+                <div class="sidebar-collapse" id="sidebar-collapse">
+                    <i class="fas fa-chevron-left"></i>
+                </div>
+            </div>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="index.html">
+                        <i class="fas fa-home"></i>
+                        <span>Início</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="lojas.html" class="active">
+                        <i class="fas fa-store"></i>
+                        <span>Lojas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="logs.html">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Registros</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- User Profile at bottom of sidebar -->
+            <div class="mt-auto sidebar-user-section">
+                <div class="sidebar-user-info">
+                    <img src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff" alt="User" class="sidebar-user-avatar">
+                    <div class="sidebar-user-details">
+                        <h6 class="sidebar-user-name mb-0" id="user-name">Carregando...</h6>
+                        <small class="sidebar-user-email" id="user-email">carregando@email.com</small>
+                    </div>
+                </div>
+                <div class="sidebar-user-actions">
+                    <a href="#" id="user-profile" class="sidebar-user-action">
+                        <i class="fas fa-id-card"></i> Meu Perfil
+                    </a>
+                    <a href="#" id="change-password" class="sidebar-user-action">
+                        <i class="fas fa-key"></i> Alterar Senha
+                    </a>
+                    <a href="#" id="logout-btn" class="sidebar-user-action sidebar-user-action-danger">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white top-navbar">
+                <div class="container-fluid">
+                    <button class="btn btn-outline-secondary d-md-none me-3 btn-toggle" id="menu-toggle" type="button">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h5 class="mb-0 text-primary">
+                        <i class="fas fa-map-marker-alt me-1"></i>
+                        <span id="loja-codigo">Carregando...</span>
+                    </h5>
+        </div>
+    </nav>
+
+            <div class="content-area">
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <h2 id="loja-titulo">Carregando informações da loja...</h2>
+                <p class="text-muted" id="loja-status">Verificando status...</p>
+                <p class="text-muted mb-3" id="loja-cep" style="word-wrap: break-word; max-width: 100%;"><i class="fas fa-map-marker-alt me-2"></i>Buscando CEP...</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                        <a href="lojas.html" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar para lojas
+                </a>
+            </div>
+        </div>
+
+        <!-- Tabs para diferentes categorias de dispositivos -->
+        <ul class="nav nav-tabs" id="deviceTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="lavadoras-tab" data-bs-toggle="tab" data-bs-target="#lavadoras" type="button" role="tab" aria-controls="lavadoras" aria-selected="true">
+                    <i class="fas fa-tshirt me-2"></i>Lavadoras
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="secadoras-tab" data-bs-toggle="tab" data-bs-target="#secadoras" type="button" role="tab" aria-controls="secadoras" aria-selected="false">
+                    <i class="fas fa-wind me-2"></i>Secadoras
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="dosadoras-tab" data-bs-toggle="tab" data-bs-target="#dosadoras" type="button" role="tab" aria-controls="dosadoras" aria-selected="false">
+                    <i class="fas fa-tint me-2"></i>Dosadoras
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="ar-tab" data-bs-toggle="tab" data-bs-target="#ar" type="button" role="tab" aria-controls="ar" aria-selected="false">
+                    <i class="fas fa-snowflake me-2"></i>Ar-Condicionado
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reset-tab" data-bs-toggle="tab" data-bs-target="#reset" type="button" role="tab" aria-controls="reset" aria-selected="false">
+                    <i class="fas fa-power-off me-2"></i>Totem
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab" aria-controls="status" aria-selected="false">
+                    <i class="fas fa-heartbeat me-2"></i>Status
+                </button>
+            </li>
+        </ul>
+
+        <!-- Conteúdo das tabs -->
+        <div class="tab-content" id="deviceTabsContent">
+            <!-- Tab Lavadoras -->
+            <div class="tab-pane fade show active" id="lavadoras" role="tabpanel" aria-labelledby="lavadoras-tab">
+                <div class="row" id="lavadoras-container">
+                    <div class="col-12 text-center py-5" id="lavadoras-loading">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2">Carregando lavadoras...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Secadoras -->
+            <div class="tab-pane fade" id="secadoras" role="tabpanel" aria-labelledby="secadoras-tab">
+                <div class="row" id="secadoras-container">
+                    <div class="col-12 text-center py-5" id="secadoras-loading">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2">Carregando secadoras...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Dosadoras -->
+            <div class="tab-pane fade" id="dosadoras" role="tabpanel" aria-labelledby="dosadoras-tab">
+                <div class="row" id="dosadoras-container">
+                    <div class="col-12 text-center py-5" id="dosadoras-loading">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2">Carregando dosadoras...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Ar-Condicionado -->
+            <div class="tab-pane fade" id="ar" role="tabpanel" aria-labelledby="ar-tab">
+                <div class="row" id="ar-container">
+                    <div class="col-12 text-center py-5" id="ar-loading">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2">Carregando ar-condicionado...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Reset -->
+            <div class="tab-pane fade" id="reset" role="tabpanel" aria-labelledby="reset-tab">
+                <div class="row">
+                    <div class="col-md-6 mx-auto">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Controle do Totem
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="alert alert-warning">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Esta operação irá ligar ou desligar o totem da loja. Use com cuidado.
+                                </p>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Controle do Totem:</label>
+                                    <p class="text-muted small">Selecione a operação desejada:</p>
+                                    
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-success" id="btn-reset-1s">
+                                            <i class="fas fa-power-off me-2"></i>
+                                            Ligar Totem
+                                        </button>
+                                        <button class="btn btn-danger" id="btn-reset-13s">
+                                            <i class="fas fa-power-off me-2"></i>
+                                            Desligar Totem
+                                        </button>
+                                        <button class="btn btn-warning" id="btn-reset-3">
+                                            <i class="fas fa-redo-alt me-2"></i>
+                                            Reiniciar
+                                        </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            
+            <!-- Tab Status de Máquinas -->
+            <div class="tab-pane fade" id="status" role="tabpanel" aria-labelledby="status-tab">
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Tabela para Lavadoras e Secadoras -->
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-heartbeat me-2"></i>Status das Lavadoras e Secadoras
+                                    </h5>
+                                    <button class="btn btn-sm btn-light" id="refresh-status-machines">
+                                        <i class="fas fa-sync-alt me-1"></i>Atualizar
+                                    </button>
+                </div>
+            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover" id="status-machine-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Tipo</th>
+                                                <th>ID</th>
+                                                <th>Status</th>
+                                                <th>Disponibilidade</th>
+                                                <th>Detalhes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="status-machine-table-body">
+                                            <tr>
+                                                <td colspan="6" class="text-center py-4">
+                                                    <div class="spinner-border text-primary" role="status">
+                                                        <span class="visually-hidden">Carregando...</span>
+                                                    </div>
+                                                    <p class="mt-2">Carregando dados de status...</p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabela para Dosadoras, Ar-Condicionado e Totem -->
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-info text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-server me-2"></i>Status dos Outros Dispositivos
+                                    </h5>
+                                    <button class="btn btn-sm btn-light" id="refresh-other-devices">
+                                        <i class="fas fa-sync-alt me-1"></i>Atualizar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover" id="other-devices-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Tipo</th>
+                                                <th>ID</th>
+                                                <th>Status</th>
+                                                <th>Detalhes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="other-devices-table-body">
+                                            <tr>
+                                                <td colspan="6" class="text-center py-4">
+                                                    <div class="spinner-border text-primary" role="status">
+                                                        <span class="visually-hidden">Carregando...</span>
+                                                    </div>
+                                                    <p class="mt-2">Carregando dados de status...</p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+
+    <!-- Template para o card de lavadora -->
+    <template id="lavadora-card-template">
+        <div class="col-md-4 mb-4">
+            <div class="card device-card">
+                <div class="device-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <span class="status-indicator"></span>
+                        Lavadora <span class="device-id"></span>
+                    </h5>
+                    <span class="badge device-status"></span>
+                </div>
+                <div class="device-status-info d-flex justify-content-between px-3 py-1 bg-light border-bottom">
+                    <small class="text-muted">Lavadora: <span class="lavadora-status-text">-</span></small>
+                    <small class="text-muted">Dosadora: <span class="dosadora-status-text">-</span></small>
+                </div>
+                <div class="device-controls">
+                    <div class="mb-3">
+                        <label class="form-label">Amaciante:</label>
+                        <select class="form-select amaciante-select">
+                            <option value="0">Nenhum</option>
+                            <option value="1">Floral</option>
+                            <option value="2">Sport</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Dosagem:</label>
+                        <select class="form-select dosagem-select">
+                            <option value="1">Simples</option>
+                            <option value="2">Dupla</option>
+                        </select>
+                    </div>
+                    <div class="d-grid">
+                        <button class="btn btn-primary btn-aplicar">
+                            <i class="fas fa-unlock me-2"></i>
+                            Liberar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Template para o card de secadora -->
+    <template id="secadora-card-template">
+        <div class="col-md-4 mb-4">
+            <div class="card device-card">
+                <div class="device-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        Secadora <span class="device-id"></span>
+                    </h5>
+                    <span class="badge device-status"></span>
+                </div>
+                <div class="device-controls">
+                    <!-- Container para exibir o status da secadora -->
+                    <div class="secadora-status-container mb-2"></div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Tempo:</label>
+                        <select class="form-select tempo-select">
+                            <option value="_15">15 minutos</option>
+                            <option value="_30">30 minutos</option>
+                            <option value="_45">45 minutos</option>
+                        </select>
+                    </div>
+                    <div class="d-grid">
+                        <button class="btn btn-primary btn-iniciar">
+                            <i class="fas fa-play-circle me-2"></i>
+                            Liberar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Template para o card de dosadora -->
+    <template id="dosadora-card-template">
+        <div class="col-md-4 mb-4">
+            <div class="card device-card">
+                <div class="device-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <span class="status-indicator"></span>
+                        Dosadora <span class="device-id"></span>
+                    </h5>
+                    <span class="badge device-status"></span>
+                </div>
+                <div class="device-controls">
+                    <div class="mb-3">
+                        <label class="form-label">Bomba:</label>
+                        <select class="form-select bomba-select">
+                            <option value="1">Sabão</option>
+                            <option value="2">Amaciante Floral</option>
+                            <option value="3">Amaciante Sport</option>
+                        </select>
+                    </div>
+                    <!-- Seção de tempos atuais -->
+                    <div class="mb-3 tempos-container">
+                        <label class="form-label">Tempos configurados:</label>
+                        <div class="tempos-info bg-light p-2 rounded">
+                            <div class="d-flex justify-content-between">
+                                <small>Sabão:</small>
+                                <span class="tempo-sabao">Carregando...</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small>Floral:</small>
+                                <span class="tempo-floral">Carregando...</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small>Sport:</small>
+                                <span class="tempo-sport">Carregando...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-acionar">
+                            <i class="fas fa-tint me-2"></i>
+                            Acionar Bomba
+                        </button>
+                        <button class="btn btn-outline-primary btn-configurar">
+                            <i class="fas fa-cog me-2"></i>
+                            Configurar Tempos
+                        </button>
+                        <button class="btn btn-outline-info btn-consultar">
+                            <i class="fas fa-sync me-2"></i>
+                            Consultar Tempos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Template para o card de ar-condicionado -->
+    <template id="ar-card-template">
+        <div class="col-md-4 mb-4">
+            <div class="card device-card">
+                <div class="device-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <span class="status-indicator"></span>
+                        <i class="fas fa-snowflake me-2"></i>
+                        Ar-Condicionado
+                    </h5>
+                    <span class="badge device-status"></span>
+                </div>
+                <div class="device-controls">
+                    <div class="mb-3">
+                        <label class="form-label">Temperatura:</label>
+                        <select class="form-select temperatura-select">
+                            <option value="OFF">Desligado</option>
+                            <option value="18">18°C</option>
+                            <option value="22">22°C</option>
+                        </select>
+                    </div>
+                    <div class="d-grid">
+                        <button class="btn btn-primary btn-aplicar-temp">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Aplicar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Modal para configuração de tempos da dosadora -->
+    <div class="modal fade" id="configModal" tabindex="-1" aria-labelledby="configModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="configModalLabel">Configurar Tempos da Dosadora</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="tempo-sabao" class="form-label">Tempo do Sabão (ms):</label>
+                        <input type="number" class="form-control" id="tempo-sabao" min="0" max="10000">
+                    </div>
+                    <div class="mb-3">
+                        <label for="tempo-floral" class="form-label">Tempo do Amaciante Floral (ms):</label>
+                        <input type="number" class="form-control" id="tempo-floral" min="0" max="10000">
+                    </div>
+                    <div class="mb-3">
+                        <label for="tempo-sport" class="form-label">Tempo do Amaciante Sport (ms):</label>
+                        <input type="number" class="form-control" id="tempo-sport" min="0" max="10000">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-salvar-tempos">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery (requerido pelo DataTables) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <!-- Firebase Database -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <!-- Firebase Auth -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Prism.js for JSON highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-json.min.js"></script>
+    
+    <!-- Scripts personalizados -->
+    <script src="firebase-config.js"></script>
+    <!-- Script de autenticação -->
+    <script src="auth-check.js"></script>
+    <!-- Script de logs -->
+    <script src="firebase-logs.js"></script>
+    
+    <!-- Arquivo para buscar informações pela API externa -->
+    <script src="lojas.js"></script>
+    <!-- Script de fallback para buscar CEP da loja se lojas.js falhar -->
+    <script src="cep-loader.js"></script>
+    
+    <!-- Scripts -->
+    <script src="limparHistorico.js"></script>
+    <script src="limparHistoricoListener.js"></script>
+    
+    <!-- Inicialização -->
+    <script src="loja.js"></script>
+    
+    <!-- Toast container para alertas modernos -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="toast-container"></div>
+    </div>
+    
+    <!-- Modal para alterar senha -->
+    <div class="modal fade" id="passwordModal" tabindex="-1" aria-labelledby="passwordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="passwordModalLabel">Alterar Senha</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Um e-mail será enviado para você com instruções para redefinir sua senha.
+                    </div>
+                    <form id="password-form">
+                        <div class="mb-3">
+                            <label for="password-email" class="form-label">Confirme seu E-mail</label>
+                            <input type="email" class="form-control" id="password-email" readonly>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="send-password-reset">Enviar E-mail</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Perfil do usuário Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="profileModalLabel">Meu Perfil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="profile-alert" class="alert alert-danger d-none"></div>
+                    <form id="profile-form">
+                        <div class="mb-3">
+                            <label for="profile-name" class="form-label">Nome Completo</label>
+                            <input type="text" class="form-control" id="profile-name" placeholder="Seu nome">
+                        </div>
+                        <div class="mb-3">
+                            <label for="profile-email" class="form-label">E-mail</label>
+                            <input type="email" class="form-control" id="profile-email" readonly>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="save-profile">Salvar Alterações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de alerta moderno -->
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="alertModalTitle">Mensagem</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="alertModalMessage">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de confirmação moderno -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalTitle">Confirmação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="confirmModalMessage">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="confirmModalButtonCancel">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirmModalButtonConfirm">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Reset em Lote -->
+    <div class="modal fade" id="batchResetModal" tabindex="-1" aria-labelledby="batchResetModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="batchResetModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Reset em Lote
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Esta operação irá reiniciar os totens de várias lojas simultaneamente. Use com cautela.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirm-batch-reset">
+                        <i class="fas fa-power-off me-2"></i>Executar Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toggle sidebar no mobile -->
+    <script>
+        // Alternar sidebar em dispositivos móveis
+        document.getElementById("menu-toggle").addEventListener("click", function(e) {
+            e.preventDefault();
+            document.getElementById("wrapper").classList.toggle("toggled");
+        });
+        
+        // Alternar colapso da sidebar
+        document.getElementById("sidebar-collapse").addEventListener("click", function(e) {
+            e.preventDefault();
+            document.getElementById("sidebar-wrapper").classList.toggle("sidebar-collapsed");
+        });
+    </script>
+</body>
+</html>
